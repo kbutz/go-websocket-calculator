@@ -1,1 +1,1 @@
-Exploring web sockets with go-gorilla to learn golang.
+Exploring web sockets with go-gorilla to learn golang. Inspiration taken from go-gorilla websocket examples and various tutorials, including: https://scotch.io/bar-talk/build-a-realtime-chat-server-with-go-and-websockets

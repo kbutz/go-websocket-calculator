@@ -9,7 +9,8 @@ import (
 
 var clients = make(map[*websocket.Conn]bool) // connected clients
 var broadcast = make(chan Message, 10)       // broadcast channel
-var broadcastMessages []Message
+// TODO: in-memory cache of messages should be replaced with database
+var allMessages []Message
 
 // Configure the upgrader
 var upgrader = websocket.Upgrader{
@@ -20,8 +21,7 @@ var upgrader = websocket.Upgrader{
 
 // Define our message object
 type Message struct {
-	Email    string `json:"email"`
-	Username string `json:"username"`
+	Name    string `json:"name"`
 	Message  string `json:"message"`
 }
 
@@ -33,7 +33,7 @@ func main() {
 	// Configure websocket route
 	http.HandleFunc("/ws", handleConnections)
 
-	// Start listening for incoming chat messages
+	// Start go routine listening for incoming chat messages
 	go handleMessages()
 
 	// Start the server on localhost port 8000 and log any errors
@@ -76,14 +76,16 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 
 		// add message to broadcast slice
 		saveMessage(msg)
-		log.Printf("%v\n", broadcastMessages)
+		log.Printf("%v\n", allMessages)
 
 	}
 }
 
+// TODO: replace with MySQL
 func loadMessages(ws *websocket.Conn) {
-	if len(broadcastMessages) > 10 {
-		for _, messageHistory := range broadcastMessages[len(broadcastMessages) - 10 : len(broadcastMessages)] {
+	if len(allMessages) > 10 {
+		log.Printf(string(len(allMessages)))
+		for _, messageHistory := range allMessages[len(allMessages) - 10 : len(allMessages)] {
 			err := ws.WriteJSON(messageHistory)
 			if err != nil {
 				log.Printf("error writing json: %v", err)
@@ -92,7 +94,7 @@ func loadMessages(ws *websocket.Conn) {
 			}
 		}
 	} else {
-		for _, messageHistory := range broadcastMessages {
+		for _, messageHistory := range allMessages {
 			err := ws.WriteJSON(messageHistory)
 			if err != nil {
 				log.Printf("error writing json: %v", err)
@@ -103,8 +105,9 @@ func loadMessages(ws *websocket.Conn) {
 	}
 }
 
+// TODO: replace with MySQL
 func saveMessage(message Message) {
-	broadcastMessages = append(broadcastMessages, message)
+	allMessages = append(allMessages, message)
 }
 
 func handleMessages() {

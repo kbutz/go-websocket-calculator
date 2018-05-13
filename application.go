@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/websocket"
 )
@@ -27,8 +28,17 @@ type Message struct {
 }
 
 func main() {
+	port := os.Getenv("PORT")
+
+  if port == "" {
+      port = "5000"
+  }
+
+  f, _ := os.Create("/var/log/golang/golang-server.log")
+  defer f.Close()
+  log.SetOutput(f)
 	// Create a simple file server
-	fs := http.FileServer(http.Dir("../public"))
+	fs := http.FileServer(http.Dir("public"))
 	http.Handle("/", fs)
 
 	// Configure websocket route
@@ -44,8 +54,8 @@ func main() {
 	go handleMessages()
 
 	// Start the server on localhost port 8000 and log any errors
-	log.Println("HTTP server started on :8000")
-	err := http.ListenAndServe(":8000", nil)
+	log.Println("HTTP server started on :5000")
+	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}

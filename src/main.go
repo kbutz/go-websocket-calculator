@@ -42,12 +42,25 @@ func main() {
 
 	// Start go routine listening for incoming chat messages
 	go handleMessages()
+	// Start go routine for clearing messages from in memory message cache
+	go clearMesagesAtThreshold()
 
 	// Start the server on localhost port 8000 and log any errors
 	log.Println("HTTP server started on :8000")
 	err := http.ListenAndServe(":8000", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
+	}
+}
+
+func clearMesagesAtThreshold() {
+	for {
+		// clear messages if they reach a certain threshold to prevent overflow of in-memory message cache
+		// This will not be needed with MySQL implementation
+		if len(allMessages) > 1000 {
+			log.Printf("Clearing messages")
+			allMessages = allMessages[len(allMessages)-10 : len(allMessages)]
+		}
 	}
 }
 
@@ -126,6 +139,7 @@ func viewAllMessages(w http.ResponseWriter, r *http.Request) {
 
 func handleMessages() {
 	for {
+
 		// Grab the next message from the broadcast channel
 		msg := <-broadcast
 
